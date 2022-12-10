@@ -20,8 +20,7 @@ import static com.android.launcher3.logging.StatsLogManager.LAUNCHER_STATE_BACKG
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
-
-import app.lawnchair.theme.color.ColorTokens;
+import com.android.launcher3.util.Themes;
 
 /**
  * State to indicate we are about to launch a recent task. Note that this state is only used when
@@ -48,7 +47,7 @@ public class QuickSwitchState extends BackgroundAppState {
         if (dp.isTaskbarPresentInApps) {
             return launcher.getColor(R.color.taskbar_background);
         }
-        return ColorTokens.OverviewScrim.resolveColor(launcher);
+        return Themes.getAttrColor(launcher, R.attr.overviewScrimColor);
     }
 
     @Override

@@ -16,7 +16,6 @@
 package com.android.quickstep.util;
 
 import android.annotation.TargetApi;
-import android.graphics.HardwareRenderer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
@@ -54,6 +53,7 @@ public class SurfaceTransactionApplier extends ReleaseCheck {
         mTargetViewRootImpl = targetView.getViewRootImpl();
         mBarrierSurfaceControl = mTargetViewRootImpl.getSurfaceControl();
         mApplyHandler = new Handler(this::onApplyMessage);
+        setCanRelease(true);
     }
 
     protected boolean onApplyMessage(Message msg) {
@@ -75,29 +75,26 @@ public class SurfaceTransactionApplier extends ReleaseCheck {
         if (view == null) {
             return;
         }
+        Transaction t = new Transaction();
+        for (int i = params.length - 1; i >= 0; i--) {
+            SurfaceParams surfaceParams = params[i];
+            if (surfaceParams.surface.isValid()) {
+                surfaceParams.applyTo(t);
+            }
+        }
 
         mLastSequenceNumber++;
         final int toApplySeqNo = mLastSequenceNumber;
         setCanRelease(false);
-        mTargetViewRootImpl.registerRtFrameCallback(new HardwareRenderer.FrameDrawingCallback() {
-            @Override
-            public void onFrameDraw(long frame) {
-                if (mBarrierSurfaceControl == null || !mBarrierSurfaceControl.isValid()) {
-                    Message.obtain(mApplyHandler, MSG_UPDATE_SEQUENCE_NUMBER, toApplySeqNo, 0)
-                            .sendToTarget();
-                    return;
-                }
-                Transaction t = new Transaction();
-                for (int i = params.length - 1; i >= 0; i--) {
-                    SurfaceParams surfaceParams = params[i];
-                    if (surfaceParams.surface.isValid()) {
-                        surfaceParams.applyTo(t);
-                    }
-                }
-                mTargetViewRootImpl.mergeWithNextTransaction(t, frame);
+        mTargetViewRootImpl.registerRtFrameCallback(frame -> {
+            if (mBarrierSurfaceControl == null || !mBarrierSurfaceControl.isValid()) {
                 Message.obtain(mApplyHandler, MSG_UPDATE_SEQUENCE_NUMBER, toApplySeqNo, 0)
                         .sendToTarget();
+                return;
             }
+            mTargetViewRootImpl.mergeWithNextTransaction(t, frame);
+            Message.obtain(mApplyHandler, MSG_UPDATE_SEQUENCE_NUMBER, toApplySeqNo, 0)
+                    .sendToTarget();
         });
 
         // Make sure a frame gets scheduled.

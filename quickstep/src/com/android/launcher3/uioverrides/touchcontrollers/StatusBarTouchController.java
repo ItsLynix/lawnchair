@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Modifications copyright 2021, Lawnchair
  */
 package com.android.launcher3.uioverrides.touchcontrollers;
 
@@ -25,7 +23,6 @@ import static android.view.WindowManager.LayoutParams.FLAG_SLIPPERY;
 
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_SWIPE_DOWN_WORKSPACE_NOTISHADE_OPEN;
 
-import android.annotation.SuppressLint;
 import android.graphics.PointF;
 import android.util.SparseArray;
 import android.view.MotionEvent;
@@ -39,13 +36,8 @@ import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
 import com.android.launcher3.util.TouchController;
 import com.android.quickstep.SystemUiProxy;
-import com.android.quickstep.util.VibratorWrapper;
 
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-
-import app.lawnchair.LawnchairAppKt;
-import app.lawnchair.util.CompatibilityKt;
 
 /**
  * TouchController for handling touch events that get sent to the StatusBar. Once the
@@ -64,9 +56,6 @@ public class StatusBarTouchController implements TouchController {
 
     /* If {@code false}, this controller should not handle the input {@link MotionEvent}.*/
     private boolean mCanIntercept;
-
-    private boolean mExpanded;
-    private boolean mVibrated;
 
     public StatusBarTouchController(Launcher l) {
         mLauncher = l;
@@ -88,30 +77,6 @@ public class StatusBarTouchController implements TouchController {
         if (mSystemUiProxy.isActive()) {
             mLastAction = ev.getActionMasked();
             mSystemUiProxy.onStatusBarMotionEvent(ev);
-        } else if (!mExpanded) {
-            mExpanded = true;
-            expand();
-        }
-        if (!mVibrated) {
-            mVibrated = true;
-            vibrate();
-        }
-    }
-
-    @SuppressLint({"WrongConstant", "PrivateApi"})
-    private void expand() {
-        try {
-            Class.forName("android.app.StatusBarManager")
-                    .getMethod("expandNotificationsPanel")
-                    .invoke(mLauncher.getSystemService("statusbar"));
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void vibrate() {
-        if (!LawnchairAppKt.getLawnchairApp(mLauncher).isVibrateOnIconAnimation()) {
-            VibratorWrapper.INSTANCE.get(mLauncher).vibrate(VibratorWrapper.OVERVIEW_HAPTIC);
         }
     }
 
@@ -125,8 +90,6 @@ public class StatusBarTouchController implements TouchController {
             if (!mCanIntercept) {
                 return false;
             }
-            mExpanded = false;
-            mVibrated = false;
             mDownEvents.put(pid, new PointF(ev.getX(), ev.getY()));
         } else if (ev.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
            // Check!! should only set it only when threshold is not entered.
@@ -163,8 +126,6 @@ public class StatusBarTouchController implements TouchController {
                     .log(LAUNCHER_SWIPE_DOWN_WORKSPACE_NOTISHADE_OPEN);
             setWindowSlippery(false);
             return true;
-        } else if (CompatibilityKt.isOnePlusStock() && action == ACTION_MOVE) {
-            dispatchTouchEvent(ev);
         }
         return true;
     }
@@ -201,6 +162,6 @@ public class StatusBarTouchController implements TouchController {
                 return false;
             }
         }
-        return true;
+        return SystemUiProxy.INSTANCE.get(mLauncher).isActive();
     }
 }

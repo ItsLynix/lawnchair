@@ -26,18 +26,20 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherState;
 import com.android.launcher3.R;
-import com.android.quickstep.SysUINavigationMode;
+import com.android.launcher3.util.DisplayController;
+import com.android.launcher3.util.Themes;
 import com.android.quickstep.util.LayoutUtils;
 import com.android.quickstep.views.RecentsView;
 import com.android.quickstep.views.TaskView;
-
-import app.lawnchair.preferences.PreferenceManager;
-import app.lawnchair.theme.color.ColorTokens;
 
 /**
  * Definition for overview state
  */
 public class OverviewState extends LauncherState {
+
+    private static final int OVERVIEW_SLIDE_IN_DURATION = 380;
+    private static final int OVERVIEW_POP_IN_DURATION = 250;
+    private static final int OVERVIEW_EXIT_DURATION = 250;
 
     protected static final Rect sTempRect = new Rect();
 
@@ -58,17 +60,24 @@ public class OverviewState extends LauncherState {
     }
 
     @Override
-    public int getTransitionDuration(Context context) {
-        // In gesture modes, overview comes in all the way from the side, so give it more time.
-        return SysUINavigationMode.INSTANCE.get(context).getMode().hasGestures ? 380 : 250;
+    public int getTransitionDuration(Context context, boolean isToState) {
+        if (isToState) {
+            // In gesture modes, overview comes in all the way from the side, so give it more time.
+            return DisplayController.getNavigationMode(context).hasGestures
+                    ? OVERVIEW_SLIDE_IN_DURATION
+                    : OVERVIEW_POP_IN_DURATION;
+        } else {
+            // When exiting Overview, exit quickly.
+            return OVERVIEW_EXIT_DURATION;
+        }
     }
 
     @Override
     public ScaleAndTranslation getWorkspaceScaleAndTranslation(Launcher launcher) {
         RecentsView recentsView = launcher.getOverviewPanel();
-        float workspacePageWidth = launcher.getDeviceProfile().getWorkspaceWidth();
+        float workspacePageHeight = launcher.getDeviceProfile().getCellLayoutHeight();
         recentsView.getTaskSize(sTempRect);
-        float scale = (float) sTempRect.width() / workspacePageWidth;
+        float scale = (float) sTempRect.height() / workspacePageHeight;
         float parallaxFactor = 0.5f;
         return new ScaleAndTranslation(scale, 0, -getDefaultSwipeHeight(launcher) * parallaxFactor);
     }
@@ -90,9 +99,6 @@ public class OverviewState extends LauncherState {
 
     @Override
     public int getVisibleElements(Launcher launcher) {
-        if (PreferenceManager.getInstance(launcher).getRecentsActionClearAll().get()) {
-            return OVERVIEW_ACTIONS;
-        }
         return CLEAR_ALL_BUTTON | OVERVIEW_ACTIONS;
     }
 
@@ -103,12 +109,12 @@ public class OverviewState extends LauncherState {
 
     @Override
     public int getWorkspaceScrimColor(Launcher launcher) {
-        return ColorTokens.OverviewScrim.resolveColor(launcher);
+        return Themes.getAttrColor(launcher, R.attr.overviewScrimColor);
     }
 
     @Override
     public boolean displayOverviewTasksAsGrid(DeviceProfile deviceProfile) {
-        return deviceProfile.overviewShowAsGrid;
+        return deviceProfile.isTablet;
     }
 
     @Override
@@ -128,9 +134,14 @@ public class OverviewState extends LauncherState {
 
     @Override
     public void onBackPressed(Launcher launcher) {
-        TaskView taskView = launcher.<RecentsView>getOverviewPanel().getRunningTaskView();
+        RecentsView recentsView = launcher.getOverviewPanel();
+        TaskView taskView = recentsView.getRunningTaskView();
         if (taskView != null) {
-            taskView.launchTaskAnimated();
+            if (recentsView.isTaskViewFullyVisible(taskView)) {
+                taskView.launchTasks();
+            } else {
+                recentsView.snapToPage(recentsView.indexOfChild(taskView));
+            }
         } else {
             super.onBackPressed(launcher);
         }

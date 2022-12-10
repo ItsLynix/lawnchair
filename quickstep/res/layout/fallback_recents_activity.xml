@@ -33,7 +33,7 @@
         android:layout_height="match_parent"
         android:clipChildren="false">
 
-        <app.lawnchair.views.LawnchairScrimView
+        <com.android.launcher3.views.ScrimView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/scrim_view"

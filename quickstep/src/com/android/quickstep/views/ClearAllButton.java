@@ -25,9 +25,6 @@ import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.statemanager.StatefulActivity;
 import com.android.launcher3.touch.PagedOrientationHandler;
 
-import app.lawnchair.font.FontManager;
-import app.lawnchair.theme.drawable.DrawableTokens;
-
 public class ClearAllButton extends Button {
 
     public static final FloatProperty<ClearAllButton> VISIBILITY_ALPHA =
@@ -78,8 +75,6 @@ public class ClearAllButton extends Button {
         super(context, attrs);
         mIsRtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
         mActivity = StatefulActivity.fromContext(context);
-        FontManager.INSTANCE.get(context).overrideFont(this, attrs);
-        setBackground(DrawableTokens.BgOverviewClearAllButton.resolve(context));
     }
 
     @Override
@@ -146,7 +141,10 @@ public class ClearAllButton extends Button {
         }
         applyPrimaryTranslation();
         applySecondaryTranslation();
-        mScrollAlpha = 1 - shift / orientationSize;
+        float clearAllSpacing =
+                recentsView.getPageSpacing() + recentsView.getClearAllExtraPageSpacing();
+        clearAllSpacing = mIsRtl ? -clearAllSpacing : clearAllSpacing;
+        mScrollAlpha = Math.max((clearAllScroll + clearAllSpacing - scroll) / clearAllSpacing, 0);
         updateAlpha();
     }
 
@@ -252,7 +250,7 @@ public class ClearAllButton extends Button {
      */
     private float getOriginalTranslationY() {
         DeviceProfile deviceProfile = mActivity.getDeviceProfile();
-        return deviceProfile.overviewShowAsGrid
+        return deviceProfile.isTablet
                 ? deviceProfile.overviewRowSpacing
                 : deviceProfile.overviewTaskThumbnailTopMarginPx / 2.0f;
     }

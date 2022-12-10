@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.RemoteViews.RemoteViewOutlineProvider;
 
-import com.android.launcher3.Utilities;
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
@@ -137,7 +136,7 @@ final class FloatingWidgetBackgroundView extends View {
     }
 
     /** Returns the maximum corner radius of {@param drawable}. */
-    private static float getMaxRadius(Drawable drawable) {
+    private static float getMaxRadius(@Nullable Drawable drawable) {
         if (!(drawable instanceof GradientDrawable)) return 0;
         float[] cornerRadii = ((GradientDrawable) drawable).getCornerRadii();
         float cornerRadius = ((GradientDrawable) drawable).getCornerRadius();
@@ -157,8 +156,7 @@ final class FloatingWidgetBackgroundView extends View {
         if (RoundedCornerEnforcement.isRoundedCornerEnabled()
                 && hostView.hasEnforcedCornerRadius()) {
             return hostView.getEnforcedCornerRadius();
-        } else if (Utilities.ATLEAST_S
-                && v.getOutlineProvider() instanceof RemoteViewOutlineProvider
+        } else if (v.getOutlineProvider() instanceof RemoteViewOutlineProvider
                 && v.getClipToOutline()) {
             return ((RemoteViewOutlineProvider) v.getOutlineProvider()).getRadius();
         }

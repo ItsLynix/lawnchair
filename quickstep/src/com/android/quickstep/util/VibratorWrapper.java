@@ -15,6 +15,7 @@
  */
 package com.android.quickstep.util;
 
+import static android.os.VibrationEffect.createPredefined;
 import static android.provider.Settings.System.HAPTIC_FEEDBACK_ENABLED;
 
 import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
@@ -51,7 +52,7 @@ public class VibratorWrapper {
     public static final VibrationEffect EFFECT_CLICK =
             createPredefined(VibrationEffect.EFFECT_CLICK);
     public static final VibrationEffect EFFECT_TEXTURE_TICK =
-            createPredefined(VibrationEffect.EFFECT_TEXTURE_TICK);
+            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TEXTURE_TICK);
 
     /**
      * Haptic when entering overview.
@@ -111,10 +112,5 @@ public class VibratorWrapper {
                 }
             });
         }
-    }
-
-    private static VibrationEffect createPredefined(int effectId) {
-        if (!Utilities.ATLEAST_Q) return null;
-        return VibrationEffect.createPredefined(effectId);
     }
 }
